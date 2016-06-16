@@ -1,0 +1,36 @@
+#!/bin/bash
+# @andrea 2015
+
+AMULED_CFG_FILE="/path/to/.aMule/remote.conf"
+
+mk_check_name="aMuled"
+mk_status=0
+mk_status_txt="OK"
+
+if which amulecmd >/dev/null
+ then
+	a_limits=$(amulecmd -f $AMULED_CFG_FILE -c "get bwlimits" | grep ^"\ >" | sed 's/.*limits:\ //')
+	a_showul=$(amulecmd -f $AMULED_CFG_FILE -c "show ul" |grep ^"\ >"|wc -l)
+	a_showdl=$(amulecmd -f $AMULED_CFG_FILE -c "show dl"|grep Downloading|wc -l)
+	a_status=$(amulecmd -f $AMULED_CFG_FILE -c "status")
+	echo "$a_status" | grep eD2k |grep Connected &>/dev/null && ed2k="ok" || ed2k="CRIT"
+	echo "$a_status" | grep Kad |grep "(ok)" &>/dev/null && kad="ok" || kad="CRIT"
+	dlspeed=$(echo "$a_status" | grep Download | awk '{print $3,$4}')
+		dlspeed_v=$(echo "$a_status" | grep Download | awk '{print $3}')
+		dlspeed_u=$(echo "$a_status" | grep Download | awk '{print $4}'| sed 's/\/s.*//')
+		dlspeed_c=$(units -1t ${dlspeed_v}${dlspeed_u} kB)
+	ulspeed=$(echo "$a_status" | grep Upload | awk '{print $3,$4}')
+		ulspeed_v=$(echo "$a_status" | grep Upload | awk '{print $3}')
+		ulspeed_u=$(echo "$a_status" | grep Upload | awk '{print $4}'| sed 's/\/s.*//')
+		ulspeed_c=$(units -1t ${ulspeed_v}${ulspeed_u} kB)
+	
+	if [ "$ed2k" = "CRIT" -o "$kad" = "CRIT" ]; then
+		mk_status=2
+		mk_status_txt="CRITICAL"
+	fi
+	perf_data="total_download=$a_showdl|total_upload=$a_showul|download_speed=$dlspeed_c|upload_speed=$ulspeed_c"
+	echo "$mk_status $mk_check_name $perf_data OK - eD2k ($ed2k), Kad ($kad), Download: $a_showdl at $dlspeed, Upload: $a_showul at $ulspeed (limits: $a_limits)"
+ else
+	echo "2 $mk_check_name - CRITICAL - no 'amulecmd' command found (check amule-cli package)"
+
+ fi
