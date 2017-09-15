@@ -2,6 +2,7 @@
 # @zionio 2015
 
 AMULED_CFG_FILE="/path/to/.aMule/remote.conf"
+AMULED_REMOTE_PASSWORD="<your ECPassword>"
 
 mk_check_name="aMuled"
 mk_status=0
@@ -9,10 +10,11 @@ mk_status_txt="OK"
 
 if which amulecmd >/dev/null
  then
-	a_limits=$(amulecmd -f $AMULED_CFG_FILE -c "get bwlimits" | grep ^"\ >" | sed 's/.*limits:\ //')
-	a_showul=$(amulecmd -f $AMULED_CFG_FILE -c "show ul" |grep ^"\ >"|wc -l)
-	a_showdl=$(amulecmd -f $AMULED_CFG_FILE -c "show dl"|grep Downloading|wc -l)
-	a_status=$(amulecmd -f $AMULED_CFG_FILE -c "status")
+	a_limits=$(amulecmd -f $AMULED_CFG_FILE -P $AMULED_REMOTE_PASSWORD -c "get bwlimits" | grep ^"\ >" | sed 's/.*limits:\ //')
+	a_showul=$(amulecmd -f $AMULED_CFG_FILE -P $AMULED_REMOTE_PASSWORD -c "show ul" |grep ^"\ >"|wc -l)
+	a_showdl=$(amulecmd -f $AMULED_CFG_FILE -P $AMULED_REMOTE_PASSWORD -c "show dl"|grep Downloading|wc -l)
+	a_status=$(amulecmd -f $AMULED_CFG_FILE -P $AMULED_REMOTE_PASSWORD -c "status")
+
 	echo "$a_status" | grep eD2k |grep Connected &>/dev/null && ed2k="ok" || ed2k="CRIT"
 	echo "$a_status" | grep Kad |grep "(ok)" &>/dev/null && kad="ok" || kad="CRIT"
 	dlspeed=$(echo "$a_status" | grep Download | awk '{print $3,$4}')
